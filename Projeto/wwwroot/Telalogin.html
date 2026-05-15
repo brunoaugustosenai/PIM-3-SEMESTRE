@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login | ElectroNext</title>
+  <link rel="stylesheet" href="style-Telalogin.css">
+</head>
+<body>
+  <div class="login-container">
+    <div class="logo">Electro<span>Next</span></div>
+    <h2>Acesse sua conta</h2>
+    <form id="formLogin">
+      <input id="email" type="email" placeholder="E-mail" required>
+      <input id="senha" type="password" placeholder="Senha" required>
+      <button type="submit">Entrar</button>
+    </form>
+    <p id="mensagem" style="color:#ff4757;text-align:center"></p>
+    <a href="Teacadastr.html">Criar uma nova conta</a>
+    <a href="admin.html">Painel administrativo</a>
+  </div>
+
+  <script src="api.js"></script>
+  <script>
+    document.getElementById('formLogin').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const msg = document.getElementById('mensagem');
+      msg.textContent = '';
+      try {
+        const usuario = await apiFetch('/api/auth/login', {
+          method: 'POST',
+          body: JSON.stringify({ email: email.value, senha: senha.value })
+        });
+        localStorage.setItem('usuarioLogado', JSON.stringify(usuario));
+        window.location.href = 'loja.html';
+      } catch (erro) {
+        msg.textContent = erro.message;
+      }
+    });
+  </script>
+</body>
+</html>

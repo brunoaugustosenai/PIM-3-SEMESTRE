@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Painel Administrativo | ElectroNext</title>
+  <style>
+    :root {
+      --bg: #05070d;
+      --panel: rgba(17, 24, 39, .88);
+      --panel-2: rgba(2, 6, 23, .78);
+      --line: rgba(148, 163, 184, .18);
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --cyan: #00d4ff;
+      --cyan-2: #06b6d4;
+      --green: #22c55e;
+      --red: #ef4444;
+      --yellow: #f59e0b;
+      --shadow: 0 22px 70px rgba(0, 0, 0, .45);
+      --radius: 22px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Arial, Helvetica, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(0, 212, 255, .18), transparent 34%),
+        radial-gradient(circle at bottom right, rgba(34, 197, 94, .09), transparent 30%),
+        var(--bg);
+    }
+
+    a { color: inherit; text-decoration: none; }
+
+    .app {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      min-height: 100vh;
+    }
+
+    .sidebar {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      padding: 28px 22px;
+      border-right: 1px solid var(--line);
+      background: rgba(2, 6, 23, .72);
+      backdrop-filter: blur(18px);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 34px;
+    }
+
+    .brand-icon {
+      width: 46px;
+      height: 46px;
+      display: grid;
+      place-items: center;
+      border-radius: 16px;
+      background: linear-gradient(135deg, var(--cyan), #2563eb);
+      color: #001018;
+      font-size: 24px;
+      font-weight: 900;
+      box-shadow: 0 14px 34px rgba(0, 212, 255, .22);
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: 19px;
+      letter-spacing: .2px;
+    }
+
+    .brand span { color: var(--cyan); }
+    .brand small { color: var(--muted); display: block; margin-top: 3px; }
+
+    .nav { display: grid; gap: 10px; }
+
+    .nav button, .nav a {
+      border: 1px solid transparent;
+      border-radius: 16px;
+      padding: 13px 14px;
+      color: #cbd5e1;
+      background: transparent;
+      text-align: left;
+      font-size: 15px;
+      cursor: pointer;
+      transition: .2s;
+    }
+
+    .nav button.active, .nav button:hover, .nav a:hover {
+      color: var(--text);
+      border-color: rgba(0, 212, 255, .32);
+      background: rgba(0, 212, 255, .10);
+    }
+
+    .side-footer {
+      position: absolute;
+      left: 22px;
+      right: 22px;
+      bottom: 22px;
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: rgba(15, 23, 42, .72);
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    main { padding: 30px; overflow: hidden; }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 18px;
+      margin-bottom: 26px;
+    }
+
+    .title h2 {
+      margin: 0 0 7px;
+      font-size: clamp(26px, 3vw, 38px);
+      letter-spacing: -.8px;
+    }
+
+    .title p { margin: 0; color: var(--muted); }
+
+    .actions { display: flex; gap: 10px; flex-wrap: wrap; }
+
+    .btn {
+      border: 0;
+      border-radius: 14px;
+      padding: 12px 16px;
+      cursor: pointer;
+      font-weight: 800;
+      letter-spacing: .2px;
+      background: #1f2937;
+      color: var(--text);
+      transition: transform .15s, opacity .15s, background .15s;
+    }
+
+    .btn:hover { transform: translateY(-1px); opacity: .92; }
+    .btn-primary { background: linear-gradient(135deg, var(--cyan), var(--cyan-2)); color: #001018; }
+    .btn-danger { background: rgba(239, 68, 68, .14); color: #fecaca; border: 1px solid rgba(239, 68, 68, .25); }
+    .btn-outline { background: transparent; border: 1px solid var(--line); color: #cbd5e1; }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(150px, 1fr));
+      gap: 16px;
+      margin-bottom: 22px;
+    }
+
+    .stat {
+      padding: 20px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: linear-gradient(180deg, rgba(15, 23, 42, .92), rgba(15, 23, 42, .56));
+      box-shadow: var(--shadow);
+    }
+
+    .stat small { color: var(--muted); display: block; margin-bottom: 10px; }
+    .stat strong { font-size: 25px; }
+    .stat .ok { color: var(--green); }
+    .stat .warn { color: var(--yellow); }
+
+    .grid {
+      display: grid;
+      grid-template-columns: minmax(360px, 440px) 1fr;
+      gap: 18px;
+      align-items: start;
+    }
+
+    .panel {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 22px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .panel-header h3 { margin: 0; font-size: 18px; }
+    .panel-header small { color: var(--muted); }
+    .panel-body { padding: 22px; }
+
+    .form-grid { display: grid; gap: 13px; }
+
+    label { display: grid; gap: 7px; color: #cbd5e1; font-size: 13px; font-weight: 700; }
+
+    input, textarea, select {
+      width: 100%;
+      border: 1px solid rgba(148, 163, 184, .22);
+      border-radius: 14px;
+      padding: 13px 14px;
+      outline: none;
+      color: var(--text);
+      background: rgba(2, 6, 23, .70);
+      transition: .18s;
+    }
+
+    textarea { min-height: 86px; resize: vertical; }
+    input:focus, textarea:focus, select:focus { border-color: rgba(0, 212, 255, .65); box-shadow: 0 0 0 4px rgba(0, 212, 255, .10); }
+
+    .two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .form-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 6px; }
+
+    .toolbar {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .toolbar input { max-width: 420px; }
+
+    .table-wrap { overflow-x: auto; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 760px;
+    }
+
+    th, td {
+      padding: 14px 12px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      vertical-align: middle;
+      color: #e5e7eb;
+    }
+
+    th {
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+    }
+
+    .product-cell { display: flex; align-items: center; gap: 12px; }
+
+    .thumb {
+      width: 52px;
+      height: 52px;
+      border-radius: 15px;
+      object-fit: cover;
+      background: rgba(0, 212, 255, .12);
+      border: 1px solid var(--line);
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 12px;
+      font-weight: 800;
+      border: 1px solid var(--line);
+      color: #cbd5e1;
+      background: rgba(148, 163, 184, .08);
+    }
+
+    .badge.ok { color: #bbf7d0; background: rgba(34, 197, 94, .12); border-color: rgba(34, 197, 94, .25); }
+    .badge.warn { color: #fde68a; background: rgba(245, 158, 11, .12); border-color: rgba(245, 158, 11, .25); }
+    .badge.off { color: #fecaca; background: rgba(239, 68, 68, .12); border-color: rgba(239, 68, 68, .25); }
+
+    .row-actions { display: flex; gap: 8px; }
+    .icon-btn { padding: 9px 11px; border-radius: 12px; font-size: 13px; }
+
+    .sales-list { display: grid; gap: 12px; }
+
+    .sale-card {
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: var(--panel-2);
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .sale-card small { color: var(--muted); display: block; margin-top: 4px; }
+    .empty, .msg { color: var(--muted); padding: 14px 0; }
+    .msg.success { color: #86efac; }
+    .msg.error { color: #fca5a5; }
+
+    .hidden { display: none !important; }
+
+    @media (max-width: 1080px) {
+      .app { grid-template-columns: 1fr; }
+      .sidebar { position: relative; height: auto; border-right: 0; border-bottom: 1px solid var(--line); }
+      .side-footer { position: static; margin-top: 20px; }
+      .grid { grid-template-columns: 1fr; }
+      .stats { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    @media (max-width: 640px) {
+      main { padding: 18px; }
+      .topbar { align-items: flex-start; flex-direction: column; }
+      .stats { grid-template-columns: 1fr; }
+      .two { grid-template-columns: 1fr; }
+      .toolbar { flex-direction: column; align-items: stretch; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-icon">⚡</div>
+        <div>
+          <h1>Electro<span>Next</span></h1>
+          <small>Painel administrativo</small>
+        </div>
+      </div>
+
+      <nav class="nav">
+        <button class="active" onclick="mostrarSecao('produtos')">📦 Produtos</button>
+        <button onclick="mostrarSecao('vendas')">🧾 Vendas</button>
+        <a href="loja.html">🛒 Ir para loja</a>
+        <a href="Telalogin.html">👤 Login</a>
+      </nav>
+
+      <div class="side-footer">
+        <strong>Status do sistema</strong><br />
+        API conectada em <span id="apiStatus">verificando...</span>
+      </div>
+    </aside>
+
+    <main>
+      <section class="topbar">
+        <div class="title">
+          <h2>Dashboard</h2>
+          <p>Gerencie produtos, estoque e vendas da loja.</p>
+        </div>
+        <div class="actions">
+          <button class="btn btn-outline" onclick="carregarTudo()">Atualizar</button>
+          <button class="btn btn-primary" onclick="focarNovoProduto()">+ Novo Produto</button>
+        </div>
+      </section>
+
+      <section class="stats">
+        <div class="stat"><small>Total de produtos</small><strong id="statProdutos">0</strong></div>
+        <div class="stat"><small>Produtos ativos</small><strong id="statAtivos" class="ok">0</strong></div>
+        <div class="stat"><small>Estoque baixo</small><strong id="statBaixo" class="warn">0</strong></div>
+        <div class="stat"><small>Total vendido</small><strong id="statVendas">R$ 0,00</strong></div>
+      </section>
+
+      <section id="secaoProdutos" class="grid">
+        <div class="panel" id="formProdutoPanel">
+          <div class="panel-header">
+            <div>
+              <h3 id="tituloForm">Cadastrar produto</h3>
+              <small>Preencha os dados abaixo</small>
+            </div>
+          </div>
+          <div class="panel-body">
+            <div class="form-grid">
+              <input id="id" type="hidden" />
+              <label>Nome do produto
+                <input id="nome" placeholder="Ex: Monitor 24 Polegadas" />
+              </label>
+              <label>Descrição
+                <textarea id="descricao" placeholder="Descrição curta do produto"></textarea>
+              </label>
+              <div class="two">
+                <label>Preço
+                  <input id="preco" type="number" step="0.01" placeholder="850.00" />
+                </label>
+                <label>Estoque
+                  <input id="estoque" type="number" placeholder="10" />
+                </label>
+              </div>
+              <label>URL da imagem
+                <input id="imagem" placeholder="https://... ou teclado.jpg" />
+              </label>
+              <div class="two">
+                <label>Status
+                  <select id="ativo">
+                    <option value="true">Ativo</option>
+                    <option value="false">Inativo</option>
+                  </select>
+                </label>
+                <label>Prévia
+                  <img id="preview" class="thumb" alt="Prévia" />
+                </label>
+              </div>
+              <div class="form-actions">
+                <button class="btn btn-primary" onclick="salvarProduto()">Salvar produto</button>
+                <button class="btn btn-outline" onclick="limparForm()">Limpar</button>
+              </div>
+              <div id="msg" class="msg"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <h3>Lista de produtos</h3>
+              <small id="contadorProdutos">0 encontrados</small>
+            </div>
+          </div>
+          <div class="panel-body">
+            <div class="toolbar">
+              <input id="buscaProduto" placeholder="Buscar produto..." oninput="renderProdutos()" />
+              <select id="filtroStatus" onchange="renderProdutos()">
+                <option value="todos">Todos</option>
+                <option value="ativos">Ativos</option>
+                <option value="inativos">Inativos</option>
+                <option value="baixo">Estoque baixo</option>
+              </select>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Produto</th>
+                    <th>Preço</th>
+                    <th>Estoque</th>
+                    <th>Status</th>
+                    <th>Ações</th>
+                  </tr>
+                </thead>
+                <tbody id="listaProdutos"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="secaoVendas" class="panel hidden">
+        <div class="panel-header">
+          <div>
+            <h3>Vendas recentes</h3>
+            <small>Pedidos finalizados no sistema</small>
+          </div>
+        </div>
+        <div class="panel-body">
+          <div id="listaVendas" class="sales-list"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="api.js"></script>
+  <script>
+    let produtosCache = [];
+    let vendasCache = [];
+
+    const semImagem = 'data:image/svg+xml;utf8,' + encodeURIComponent(`
+      <svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120">
+        <rect width="120" height="120" rx="24" fill="#0f172a"/>
+        <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="#00d4ff" font-size="34">⚡</text>
+      </svg>`);
+
+    function normalizarImagem(url) {
+      if (!url) return semImagem;
+      return url;
+    }
+
+    function mostrarMensagem(texto, tipo = '') {
+      msg.className = `msg ${tipo}`;
+      msg.textContent = texto;
+    }
+
+    function mostrarSecao(secao) {
+      document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
+      if (secao === 'produtos') {
+        document.querySelector('.nav button:nth-child(1)').classList.add('active');
+        secaoProdutos.classList.remove('hidden');
+        secaoVendas.classList.add('hidden');
+      } else {
+        document.querySelector('.nav button:nth-child(2)').classList.add('active');
+        secaoProdutos.classList.add('hidden');
+        secaoVendas.classList.remove('hidden');
+      }
+    }
+
+    async function carregarTudo() {
+      try {
+        apiStatus.textContent = 'online';
+        apiStatus.style.color = '#86efac';
+
+        produtosCache = await apiFetch('/api/produtos/admin');
+        vendasCache = await apiFetch('/api/vendas');
+
+        atualizarStats();
+        renderProdutos();
+        renderVendas();
+      } catch (erro) {
+        apiStatus.textContent = 'erro';
+        apiStatus.style.color = '#fca5a5';
+        alert(erro.message || 'Erro ao carregar dados da API.');
+      }
+    }
+
+    function atualizarStats() {
+      const ativos = produtosCache.filter(p => p.ativo).length;
+      const baixo = produtosCache.filter(p => Number(p.estoque || 0) <= 3).length;
+      const totalVendido = vendasCache.reduce((soma, v) => soma + Number(v.valorTotal || 0), 0);
+
+      statProdutos.textContent = produtosCache.length;
+      statAtivos.textContent = ativos;
+      statBaixo.textContent = baixo;
+      statVendas.textContent = moeda(totalVendido);
+    }
+
+    function renderProdutos() {
+      const termo = buscaProduto.value.trim().toLowerCase();
+      const filtro = filtroStatus.value;
+
+      let lista = produtosCache.filter(p => {
+        const texto = `${p.nome || ''} ${p.descricao || ''}`.toLowerCase();
+        const bateBusca = !termo || texto.includes(termo);
+        const estoque = Number(p.estoque || 0);
+
+        if (!bateBusca) return false;
+        if (filtro === 'ativos') return p.ativo;
+        if (filtro === 'inativos') return !p.ativo;
+        if (filtro === 'baixo') return estoque <= 3;
+        return true;
+      });
+
+      contadorProdutos.textContent = `${lista.length} encontrado${lista.length === 1 ? '' : 's'}`;
+
+      listaProdutos.innerHTML = lista.length ? lista.map(p => {
+        const estoque = Number(p.estoque || 0);
+        const badgeEstoque = estoque <= 3 ? 'warn' : 'ok';
+        const badgeStatus = p.ativo ? 'ok' : 'off';
+        return `
+          <tr>
+            <td>
+              <div class="product-cell">
+                <img class="thumb" src="${normalizarImagem(p.imagemUrl)}" onerror="this.src='${semImagem}'" alt="${p.nome || 'Produto'}">
+                <div>
+                  <strong>${p.nome || '-'}</strong><br>
+                  <small style="color:var(--muted)">${p.descricao || 'Sem descrição'}</small>
+                </div>
+              </div>
+            </td>
+            <td><strong>${moeda(p.precoVenda)}</strong></td>
+            <td><span class="badge ${badgeEstoque}">${estoque} un.</span></td>
+            <td><span class="badge ${badgeStatus}">${p.ativo ? 'Ativo' : 'Inativo'}</span></td>
+            <td>
+              <div class="row-actions">
+                <button class="btn btn-outline icon-btn" onclick='editar(${JSON.stringify(p).replaceAll("'", "&#39;")})'>Editar</button>
+                <button class="btn btn-danger icon-btn" onclick="excluir(${p.id})">Desativar</button>
+              </div>
+            </td>
+          </tr>`;
+      }).join('') : `<tr><td colspan="5" class="empty">Nenhum produto encontrado.</td></tr>`;
+    }
+
+    function renderVendas() {
+      listaVendas.innerHTML = vendasCache.length ? vendasCache.map(v => `
+        <div class="sale-card">
+          <div>
+            <strong>Pedido #${v.id}</strong>
+            <small>${new Date(v.dataVenda).toLocaleString('pt-BR')}</small>
+          </div>
+          <div style="text-align:right">
+            <strong>${moeda(v.valorTotal)}</strong>
+            <small>${v.statusVenda || 'APROVADO'} · ${v.statusPagamento || 'PENDENTE'}</small>
+          </div>
+        </div>
+      `).join('') : '<div class="empty">Nenhuma venda registrada ainda.</div>';
+    }
+
+    function editar(p) {
+      id.value = p.id;
+      nome.value = p.nome || '';
+      descricao.value = p.descricao || '';
+      preco.value = p.precoVenda || 0;
+      estoque.value = p.estoque || 0;
+      imagem.value = p.imagemUrl || '';
+      ativo.value = String(Boolean(p.ativo));
+      preview.src = normalizarImagem(p.imagemUrl);
+      tituloForm.textContent = 'Editar produto';
+      mostrarMensagem('Editando produto selecionado.', '');
+      formProdutoPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function limparForm() {
+      id.value = '';
+      nome.value = '';
+      descricao.value = '';
+      preco.value = '';
+      estoque.value = '';
+      imagem.value = '';
+      ativo.value = 'true';
+      preview.src = semImagem;
+      tituloForm.textContent = 'Cadastrar produto';
+      mostrarMensagem('', '');
+    }
+
+    function focarNovoProduto() {
+      mostrarSecao('produtos');
+      limparForm();
+      nome.focus();
+      formProdutoPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    async function salvarProduto() {
+      try {
+        if (!nome.value.trim()) return mostrarMensagem('Informe o nome do produto.', 'error');
+        if (!preco.value || Number(preco.value) < 0) return mostrarMensagem('Informe um preço válido.', 'error');
+        if (!estoque.value || Number(estoque.value) < 0) return mostrarMensagem('Informe um estoque válido.', 'error');
+
+        const corpo = {
+          nome: nome.value.trim(),
+          descricao: descricao.value.trim(),
+          precoVenda: Number(preco.value),
+          estoque: Number(estoque.value),
+          imagemUrl: imagem.value.trim(),
+          ativo: ativo.value === 'true'
+        };
+
+        if (id.value) {
+          await apiFetch(`/api/produtos/${id.value}`, { method: 'PUT', body: JSON.stringify(corpo) });
+          mostrarMensagem('Produto atualizado com sucesso.', 'success');
+        } else {
+          await apiFetch('/api/produtos', { method: 'POST', body: JSON.stringify(corpo) });
+          mostrarMensagem('Produto cadastrado com sucesso.', 'success');
+        }
+
+        limparForm();
+        await carregarTudo();
+      } catch (erro) {
+        mostrarMensagem(erro.message || 'Erro ao salvar produto.', 'error');
+      }
+    }
+
+    async function excluir(produtoId) {
+      if (!confirm('Deseja desativar este produto?')) return;
+      try {
+        await apiFetch(`/api/produtos/${produtoId}`, { method: 'DELETE' });
+        await carregarTudo();
+      } catch (erro) {
+        alert(erro.message || 'Erro ao desativar produto.');
+      }
+    }
+
+    imagem.addEventListener('input', () => {
+      preview.src = normalizarImagem(imagem.value.trim());
+    });
+
+    preview.src = semImagem;
+    carregarTudo();
+  </script>
+</body>
+</html>

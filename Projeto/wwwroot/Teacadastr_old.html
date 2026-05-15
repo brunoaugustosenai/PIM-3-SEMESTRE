@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cadastro | ElectroNext</title>
+  <link rel="stylesheet" href="style-Teacadastr.css">
+</head>
+<body>
+  <div class="card">
+    <div class="logo">Electro<span>Next</span></div>
+    <h2>Crie sua conta</h2>
+    <div class="sub">Leva menos de 1 minuto</div>
+
+    <input type="text" id="nome" placeholder="Nome completo">
+    <input type="email" id="email" placeholder="E-mail">
+    <input type="text" id="telefone" placeholder="Telefone">
+    <input type="password" id="senha" placeholder="Senha (mín. 8 caracteres)">
+    <input type="password" id="confirmar" placeholder="Confirmar senha">
+
+    <div class="termos"><input type="checkbox" id="termos"> Aceito os Termos de Uso e Política de Privacidade</div>
+    <button id="btnCadastrar">Criar Conta</button>
+    <div id="mensagem" class="feedback msg-final"></div>
+    <div class="link-login">Já tem conta? <a href="Telalogin.html">Faça login</a></div>
+  </div>
+
+  <script src="api.js"></script>
+  <script>
+    document.getElementById('btnCadastrar').addEventListener('click', async () => {
+      const msg = document.getElementById('mensagem');
+      msg.textContent = '';
+      msg.className = 'feedback msg-final';
+
+      if (!nome.value || !email.value || !senha.value || !confirmar.value) {
+        msg.textContent = 'Preencha todos os campos obrigatórios.';
+        msg.classList.add('erro');
+        return;
+      }
+      if (senha.value.length < 8) {
+        msg.textContent = 'A senha precisa ter pelo menos 8 caracteres.';
+        msg.classList.add('erro');
+        return;
+      }
+      if (senha.value !== confirmar.value) {
+        msg.textContent = 'As senhas não coincidem.';
+        msg.classList.add('erro');
+        return;
+      }
+      if (!termos.checked) {
+        msg.textContent = 'Você precisa aceitar os termos.';
+        msg.classList.add('erro');
+        return;
+      }
+
+      try {
+        await apiFetch('/api/auth/cadastro', {
+          method: 'POST',
+          body: JSON.stringify({ nome: nome.value, email: email.value, telefone: telefone.value, senha: senha.value })
+        });
+        msg.textContent = 'Conta criada com sucesso! Faça login.';
+        msg.classList.add('ok');
+        setTimeout(() => window.location.href = 'Telalogin.html', 1200);
+      } catch (erro) {
+        msg.textContent = erro.message;
+        msg.classList.add('erro');
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Checkout | ElectroNext</title>
+  <link rel="stylesheet" href="style-Telacompra.css" />
+  <style>
+    .login-lock{max-width:520px;margin:70px auto;background:#1a1a1a;border:1px solid #333;border-radius:18px;padding:28px;text-align:center;color:#fff}.login-lock p{color:#aaa}.login-lock a{display:inline-block;margin:8px;padding:12px 18px;border-radius:12px;text-decoration:none;font-weight:800}.login-lock .primary{background:#00d4ff;color:#001015}.login-lock .secondary{border:1px solid #333;color:#fff}.dados-cartao{display:none}.dados-cartao.show{display:block}.msg-login{color:#ffd166;font-size:13px;margin-top:10px}
+  </style>
+</head>
+<body>
+<div id="areaCheckout" style="display:none">
+  <div class="progress"><div>1. Carrinho</div><div class="active">2. Pagamento</div><div>3. Confirmação</div></div>
+  <div class="container">
+    <div class="box">
+      <h3>Dados do Cliente</h3>
+      <input id="nome" placeholder="Nome completo" />
+      <input id="cpf" placeholder="CPF / CNPJ" />
+      <h3>Endereço</h3>
+      <input id="rua" placeholder="Rua" /><input id="numero" placeholder="Número" /><input id="cidade" placeholder="Cidade" /><input id="cep" placeholder="CEP" />
+    </div>
+    <div class="box pagamento">
+      <h3>Forma de Pagamento</h3>
+      <label class="pix-destaque"><input type="radio" name="pagamento" value="pix" checked /> Pix</label>
+      <label><input type="radio" name="pagamento" value="cartao" /> Cartão de Crédito</label>
+      <label><input type="radio" name="pagamento" value="boleto" /> Boleto Bancário</label>
+      <div id="dadosCartao" class="dados-cartao">
+        <input id="numeroCartao" placeholder="Número do cartão" />
+        <input id="validadeCartao" placeholder="Validade (MM/AA)" />
+        <input id="cvvCartao" placeholder="CVV" />
+      </div>
+      <p id="infoPagamento" class="msg-login">Pix selecionado. Os dados do cartão não são necessários.</p>
+    </div>
+    <div class="box">
+      <h3>Resumo do Pedido</h3>
+      <div id="resumo"></div>
+      <div class="resumo-item"><span>Frete</span><span style="color:var(--success);">Grátis</span></div>
+      <div class="total"><span>Total:</span><span id="total">R$ 0,00</span></div>
+      <button id="btnFinalizar">Finalizar Compra</button>
+      <p id="mensagem"></p>
+      <div class="seguro">🔒 Pagamento 100% seguro<br />Criptografia SSL de Ponta a Ponta</div>
+    </div>
+  </div>
+</div>
+
+<div id="bloqueioLogin" class="login-lock" style="display:none">
+  <h1>Entre para finalizar a compra</h1>
+  <p>Você pode acessar a loja livremente, mas precisa estar logado para concluir o pedido.</p>
+  <a class="primary" href="Telalogin.html?redirect=Telacompra.html">Fazer login</a>
+  <a class="secondary" href="loja.html">Voltar para loja</a>
+</div>
+
+<script src="api.js"></script>
+<script>
+  const usuario = getUsuarioLogado();
+  const carrinho = JSON.parse(localStorage.getItem('carrinho') || '[]');
+
+  if(!usuario){
+    document.getElementById('bloqueioLogin').style.display = 'block';
+  } else {
+    document.getElementById('areaCheckout').style.display = 'block';
+    document.getElementById('nome').value = usuario.nome || '';
+  }
+
+  function atualizarPagamento(){
+    const forma = document.querySelector('input[name="pagamento"]:checked')?.value || 'pix';
+    const dados = document.getElementById('dadosCartao');
+    const info = document.getElementById('infoPagamento');
+    if(forma === 'cartao'){
+      dados.classList.add('show');
+      info.textContent = 'Cartão selecionado. Preencha os dados do cartão.';
+    } else {
+      dados.classList.remove('show');
+      document.getElementById('numeroCartao').value = '';
+      document.getElementById('validadeCartao').value = '';
+      document.getElementById('cvvCartao').value = '';
+      info.textContent = forma === 'pix' ? 'Pix selecionado. Os dados do cartão não são necessários.' : 'Boleto selecionado. Os dados do cartão não são necessários.';
+    }
+  }
+
+  document.querySelectorAll('input[name="pagamento"]').forEach(r => r.addEventListener('change', atualizarPagamento));
+
+  function renderResumo(){
+    let valorTotal = 0;
+    resumo.innerHTML = '';
+    if(!carrinho.length) resumo.innerHTML = '<p>Carrinho vazio.</p>';
+    carrinho.forEach(item => {
+      valorTotal += Number(item.preco || 0) * item.quantidade;
+      resumo.innerHTML += `<div class="resumo-item"><span>${item.nome} x ${item.quantidade}</span><span>${moeda(Number(item.preco || 0) * item.quantidade)}</span></div>`;
+    });
+    document.getElementById('total').textContent = moeda(valorTotal);
+  }
+
+  document.getElementById('btnFinalizar')?.addEventListener('click', async () => {
+    const msg = document.getElementById('mensagem');
+    msg.textContent = '';
+    if(!getUsuarioLogado()) { window.location.href = 'Telalogin.html?redirect=Telacompra.html'; return; }
+    if(!carrinho.length) { msg.textContent = 'Carrinho vazio.'; return; }
+    try{
+      const venda = await apiFetch('/api/vendas', {
+        method: 'POST',
+        body: JSON.stringify({ clienteId: usuario.id, itens: carrinho.map(i => ({ produtoId: i.produtoId, quantidade: i.quantidade })) })
+      });
+      localStorage.removeItem('carrinho');
+      localStorage.setItem('ultimaVenda', JSON.stringify(venda));
+      window.location.href = 'finalizacao.html';
+    } catch(erro){ msg.textContent = erro.message; }
+  });
+
+  atualizarPagamento();
+  renderResumo();
+</script>
+</body>
+</html>

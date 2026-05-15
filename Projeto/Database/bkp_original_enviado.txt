@@ -1,0 +1,793 @@
+-- ==================================================
+-- MARCA
+-- ==================================================
+CREATE TABLE tbmarca (
+    id_marca INT IDENTITY(1,1) PRIMARY KEY,
+    nome_marca VARCHAR(100) NOT NULL,
+    site VARCHAR(200) NULL,
+    ativo BIT NOT NULL DEFAULT 1,
+    data_cadastro DATETIME NOT NULL DEFAULT GETDATE()
+);
+
+CREATE NONCLUSTERED INDEX idx_marca_nome ON tbmarca(nome_marca);
+
+-- ==================================================
+-- CATEGORIA (auto-relacionamento para subcategorias)
+-- ==================================================
+CREATE TABLE tbcategoria (
+    id_categoria INT IDENTITY(1,1) PRIMARY KEY,
+    nome_categoria VARCHAR(100) NOT NULL,
+    categoria_pai_id INT NULL,
+    nivel INT NOT NULL DEFAULT 0,
+    ativo BIT NOT NULL DEFAULT 1,
+    CONSTRAINT fk_categoria_pai FOREIGN KEY (categoria_pai_id) 
+        REFERENCES tbcategoria(id_categoria)
+);
+
+CREATE NONCLUSTERED INDEX idx_categoria_pai ON tbcategoria(categoria_pai_id);
+
+-- ==================================================
+-- FORNECEDOR
+-- ==================================================
+CREATE TABLE tbfornecedor (
+    id_fornecedor INT IDENTITY(1,1) PRIMARY KEY,
+    id_endereco INT NULL,
+    razao_social VARCHAR(150) NOT NULL,
+    nome_fantasia VARCHAR(100) NULL,
+    cnpj VARCHAR(18) NOT NULL UNIQUE,
+    inscricao_estadual VARCHAR(20) NULL,
+    contato_nome VARCHAR(100) NULL,
+    contato_telefone VARCHAR(20) NULL,
+    contato_email VARCHAR(100) NULL,
+    ativo BIT NOT NULL DEFAULT 1,
+    data_cadastro DATETIME NOT NULL DEFAULT GETDATE(),
+    
+    CONSTRAINT fk_fornecedor_endereco FOREIGN KEY (id_endereco) 
+        REFERENCES tbendereco(id_endereco)
+);
+
+CREATE NONCLUSTERED INDEX idx_fornecedor_cnpj ON tbfornecedor(cnpj);
+CREATE NONCLUSTERED INDEX idx_fornecedor_razao ON tbfornecedor(razao_social);
+
+-- ==================================================
+-- CONDIÇÃO DE PAGAMENTO
+-- ==================================================
+CREATE TABLE tbcondicaopagamento (
+    id_condicao_pagamento INT IDENTITY(1,1) PRIMARY KEY,
+    descricao VARCHAR(100) NOT NULL,
+    numero_parcelas INT NOT NULL DEFAULT 1,
+    taxa_juros_percentual DECIMAL(5,2) NOT NULL DEFAULT 0,
+    dias_primeira_parcela INT NOT NULL DEFAULT 30,
+    ativo BIT NOT NULL DEFAULT 1
+);
+
+-- Dados iniciais
+INSERT INTO tbcondicaopagamento (descricao, numero_parcelas, taxa_juros_percentual, dias_primeira_parcela) VALUES
+('À vista', 1, 0, 0),
+('Pix', 1, 0, 0),
+('2x sem juros', 2, 0, 30),
+('3x sem juros', 3, 0, 30),
+('4x com juros', 4, 2.5, 30),
+('5x com juros', 5, 2.5, 30),
+('6x com juros', 6, 3.0, 30);
+
+-- ==================================================
+-- ITENS DE VENDA
+-- ==================================================
+CREATE TABLE tbitemvenda (
+    id_item_venda INT IDENTITY(1,1) PRIMARY KEY,
+    id_venda INT NOT NULL,
+    id_produto INT NOT NULL,
+    quantidade INT NOT NULL CHECK (quantidade > 0),
+    preco_unitario DECIMAL(10,2) NOT NULL CHECK (preco_unitario >= 0),
+    desconto_percentual DECIMAL(5,2) NOT NULL DEFAULT 0 CHECK (desconto_percentual BETWEEN 0 AND 100),
+    subtotal AS (quantidade * preco_unitario * (1 - desconto_percentual/100)) PERSISTED,
+    
+    CONSTRAINT fk_itemvenda_venda FOREIGN KEY (id_venda) 
+        REFERENCES tbvenda(id_venda),
+    CONSTRAINT fk_itemvenda_produto FOREIGN KEY (id_produto) 
+        REFERENCES tbproduto(id_produto)
+);
+
+CREATE NONCLUSTERED INDEX idx_itemvenda_venda ON tbitemvenda(id_venda);
+CREATE NONCLUSTERED INDEX idx_itemvenda_produto ON tbitemvenda(id_produto);
+
+-- ==================================================
+-- PARCELAS
+-- ==================================================
+CREATE TABLE tbparcela (
+    id_parcela INT IDENTITY(1,1) PRIMARY KEY,
+    id_venda INT NOT NULL,
+    numero_parcela INT NOT NULL,
+    valor_parcela DECIMAL(10,2) NOT NULL CHECK (valor_parcela > 0),
+    data_vencimento DATE NOT NULL,
+    data_pagamento DATE NULL,
+    valor_pago DECIMAL(10,2) NULL,
+    status_parcela VARCHAR(20) NOT NULL DEFAULT 'PENDENTE',
+    juros_mora DECIMAL(10,2) NOT NULL DEFAULT 0,
+    
+    CONSTRAINT fk_parcela_venda FOREIGN KEY (id_venda) 
+        REFERENCES tbvenda(id_venda),
+    CONSTRAINT chk_status_parcela CHECK (status_parcela IN ('PENDENTE', 'PAGO', 'ATRASADO', 'CANCELADO'))
+);
+
+CREATE NONCLUSTERED INDEX idx_parcela_venda ON tbparcela(id_venda);
+CREATE NONCLUSTERED INDEX idx_parcela_vencimento ON tbparcela(data_vencimento) 
+    INCLUDE (status_parcela, valor_parcela);
+
+-- ==================================================
+-- COMPRA (do fornecedor)
+-- ==================================================
+CREATE TABLE tbcompra (
+    id_compra INT IDENTITY(1,1) PRIMARY KEY,
+    id_fornecedor INT NOT NULL,
+    numero_nota_fiscal VARCHAR(50) NULL,
+    data_compra DATETIME NOT NULL DEFAULT GETDATE(),
+    data_entrada_estoque DATETIME NULL,
+    valor_total DECIMAL(12,2) NOT NULL,
+    status_compra VARCHAR(20) NOT NULL DEFAULT 'PENDENTE',
+    observacao VARCHAR(MAX) NULL,
+    
+    CONSTRAINT fk_compra_fornecedor FOREIGN KEY (id_fornecedor) 
+        REFERENCES tbfornecedor(id_fornecedor),
+    CONSTRAINT chk_status_compra CHECK (status_compra IN ('PENDENTE', 'RECEBIDO', 'CANCELADO'))
+);
+
+CREATE NONCLUSTERED INDEX idx_compra_fornecedor ON tbcompra(id_fornecedor);
+CREATE NONCLUSTERED INDEX idx_compra_nf ON tbcompra(numero_nota_fiscal);
+
+-- ==================================================
+-- ITEM DA COMPRA
+-- ==================================================
+CREATE TABLE tbitemcompra (
+    id_item_compra INT IDENTITY(1,1) PRIMARY KEY,
+    id_compra INT NOT NULL,
+    id_produto INT NOT NULL,
+    quantidade INT NOT NULL CHECK (quantidade > 0),
+    preco_custo DECIMAL(10,2) NOT NULL CHECK (preco_custo >= 0),
+    subtotal AS (quantidade * preco_custo) PERSISTED,
+    
+    CONSTRAINT fk_itemcompra_compra FOREIGN KEY (id_compra) 
+        REFERENCES tbcompra(id_compra),
+    CONSTRAINT fk_itemcompra_produto FOREIGN KEY (id_produto) 
+        REFERENCES tbproduto(id_produto)
+);
+
+CREATE NONCLUSTERED INDEX idx_itemcompra_compra ON tbitemcompra(id_compra);
+CREATE NONCLUSTERED INDEX idx_itemcompra_produto ON tbitemcompra(id_produto);
+
+-- ==================================================
+-- MOVIMENTAÇÃO DE ESTOQUE (LOG)
+-- ==================================================
+CREATE TABLE tbmovimentoestoque (
+    id_movimento INT IDENTITY(1,1) PRIMARY KEY,
+    id_produto INT NOT NULL,
+    tipo_movimento VARCHAR(10) NOT NULL,
+    quantidade INT NOT NULL,
+    quantidade_antes INT NOT NULL, -- Saldo antes da movimentação
+    quantidade_depois INT NOT NULL, -- Saldo depois da movimentação
+    data_movimento DATETIME NOT NULL DEFAULT GETDATE(),
+    id_venda INT NULL,
+    id_compra INT NULL,
+    id_usuario INT NULL,
+    observacao VARCHAR(255) NULL,
+    
+    CONSTRAINT fk_movto_produto FOREIGN KEY (id_produto) 
+        REFERENCES tbproduto(id_produto),
+    CONSTRAINT fk_movto_venda FOREIGN KEY (id_venda) 
+        REFERENCES tbvenda(id_venda),
+    CONSTRAINT fk_movto_compra FOREIGN KEY (id_compra) 
+        REFERENCES tbcompra(id_compra),
+    CONSTRAINT chk_tipo_movimento CHECK (tipo_movimento IN ('ENTRADA', 'SAIDA', 'AJUSTE'))
+);
+
+-- Índice clusterizado por data (para relatórios)
+CREATE NONCLUSTERED INDEX idx_movimento_produto ON tbmovimentoestoque(id_produto, data_movimento);
+
+
+
+
+
+-- ATENÇÃO: Isso apagará todos os dados da tabela!
+-- Faça backup se necessário
+IF EXISTS (SELECT * FROM sys.tables WHERE name = 'tbmovimentoestoque')
+BEGIN
+    -- Remover constraints de FK primeiro
+    IF EXISTS (SELECT * FROM sys.foreign_keys WHERE name = 'fk_movto_venda')
+        ALTER TABLE tbmovimentoestoque DROP CONSTRAINT fk_movto_venda;
+    
+    IF EXISTS (SELECT * FROM sys.foreign_keys WHERE name = 'fk_movto_compra')
+        ALTER TABLE tbmovimentoestoque DROP CONSTRAINT fk_movto_compra;
+    
+    IF EXISTS (SELECT * FROM sys.foreign_keys WHERE name = 'fk_movto_produto')
+        ALTER TABLE tbmovimentoestoque DROP CONSTRAINT fk_movto_produto;
+    
+    -- Drop da tabela
+    DROP TABLE tbmovimentoestoque;
+END
+
+
+
+
+
+-- ==================================================
+-- ALTERAR TBPRODUTO
+-- ==================================================
+ALTER TABLE tbproduto ADD 
+    id_marca INT NULL,
+    id_categoria INT NULL,
+    preco_custo DECIMAL(10,2) NULL,
+    codigo_barras VARCHAR(50) NULL,
+    peso_kg DECIMAL(8,3) NULL,
+    garantia_meses INT NULL DEFAULT 12;
+
+-- Adicionar constraints
+ALTER TABLE tbproduto ADD 
+    CONSTRAINT fk_produto_marca FOREIGN KEY (id_marca) REFERENCES tbmarca(id_marca),
+    CONSTRAINT fk_produto_categoria FOREIGN KEY (id_categoria) REFERENCES tbcategoria(id_categoria);
+
+-- Criar índice único para código de barras (se não tiver duplicado)
+CREATE UNIQUE NONCLUSTERED INDEX idx_produto_codigo_barras ON tbproduto(codigo_barras) 
+    WHERE codigo_barras IS NOT NULL;
+
+-- ==================================================
+-- ALTERAR TBCADASTROCLIENTE
+-- ==================================================
+ALTER TABLE tbcadastrocliente ADD
+    data_ultima_compra DATE NULL,
+    total_compras DECIMAL(12,2) NOT NULL DEFAULT 0,
+    limite_credito DECIMAL(10,2) NULL;
+
+-- ==================================================
+-- VIEW DE ESTOQUE ATUAL (com SCHEMABINDING para performance)
+-- ==================================================
+CREATE VIEW vw_estoque_atual
+WITH SCHEMABINDING
+AS
+SELECT 
+    id_produto,
+    SUM(CASE 
+        WHEN tipo_movimento = 'ENTRADA' THEN quantidade 
+        WHEN tipo_movimento = 'SAIDA' THEN -quantidade 
+        ELSE 0 
+    END) AS quantidade_atual,
+    MAX(data_movimento) AS ultima_movimentacao,
+    COUNT_BIG(*) AS total_movimentos
+FROM dbo.tbmovimentoestoque
+GROUP BY id_produto;
+
+
+
+-- ==================================================
+-- VIEW DE VENDA COMPLETA (com cálculos)
+-- ==================================================
+CREATE VIEW vw_venda_completa
+AS
+SELECT 
+    v.id_venda,
+    v.id_cliente,
+    c.nome_cliente,
+    v.id_condicao_pagamento,
+    cp.descricao AS condicao_pagamento,
+    v.data_venda,
+    v.status_venda,
+    v.status_pagamento,
+    ISNULL((
+        SELECT SUM(quantidade * preco_unitario * (1 - desconto_percentual/100))
+        FROM tbitemvenda iv
+        WHERE iv.id_venda = v.id_venda
+    ), 0) AS valor_produtos,
+    ISNULL((
+        SELECT SUM(valor_parcela)
+        FROM tbparcela p
+        WHERE p.id_venda = v.id_venda
+    ), 0) AS valor_total_financiado,
+    ISNULL((
+        SELECT COUNT(*)
+        FROM tbparcela p
+        WHERE p.id_venda = v.id_venda AND p.status_parcela = 'PAGO'
+    ), 0) AS parcelas_pagas,
+    ISNULL((
+        SELECT COUNT(*)
+        FROM tbparcela p
+        WHERE p.id_venda = v.id_venda
+    ), 0) AS total_parcelas
+FROM tbvenda v
+INNER JOIN tbcadastrocliente c ON v.id_cliente = c.id_cliente
+INNER JOIN tbcondicaopagamento cp ON v.id_condicao_pagamento = cp.id_condicao_pagamento;
+
+
+-- ==================================================
+-- TRIGGER: Não permitir venda sem estoque
+-- ==================================================
+CREATE TRIGGER trg_verificar_estoque_venda
+ON tbitemvenda
+INSTEAD OF INSERT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    
+    IF EXISTS (
+        SELECT 1
+        FROM inserted i
+        CROSS APPLY (
+            SELECT SUM(CASE WHEN tipo_movimento = 'ENTRADA' THEN quantidade ELSE -quantidade END) AS estoque_atual
+            FROM tbmovimentoestoque m
+            WHERE m.id_produto = i.id_produto
+        ) e
+        WHERE i.quantidade > e.estoque_atual
+    )
+    BEGIN
+        RAISERROR('Estoque insuficiente para realizar a venda', 16, 1);
+        ROLLBACK TRANSACTION;
+        RETURN;
+    END
+    
+    -- Se estoque OK, insere normalmente
+    INSERT INTO tbitemvenda (id_venda, id_produto, quantidade, preco_unitario, desconto_percentual)
+    SELECT id_venda, id_produto, quantidade, preco_unitario, desconto_percentual
+    FROM inserted;
+END
+GO
+
+
+
+-- ==================================================
+-- SP: REALIZAR VENDA (COM TRANSAÇÃO) - CORRIGIDA
+-- ==================================================
+CREATE OR ALTER PROCEDURE sp_realizar_venda
+    @id_cliente INT,
+    @id_condicao_pagamento INT,
+    @id_endereco_entrega INT,
+    @itens_venda NVARCHAR(MAX), -- JSON em vez de TABLE
+    @observacao VARCHAR(MAX) = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+    BEGIN TRANSACTION;
+    
+    BEGIN TRY
+        DECLARE @id_venda INT;
+        DECLARE @valor_total DECIMAL(12,2);
+        
+        -- Criar tabela temporária para os itens
+        CREATE TABLE #itens_venda (
+            id_produto INT,
+            quantidade INT,
+            preco_unitario DECIMAL(10,2),
+            desconto_percentual DECIMAL(5,2)
+        );
+        
+        -- Inserir dados do JSON na tabela temporária
+        INSERT INTO #itens_venda (id_produto, quantidade, preco_unitario, desconto_percentual)
+        SELECT id_produto, quantidade, preco_unitario, desconto_percentual
+        FROM OPENJSON(@itens_venda)
+        WITH (
+            id_produto INT '$.id_produto',
+            quantidade INT '$.quantidade',
+            preco_unitario DECIMAL(10,2) '$.preco_unitario',
+            desconto_percentual DECIMAL(5,2) '$.desconto_percentual'
+        );
+        
+        -- Calcular valor total
+        SELECT @valor_total = SUM(quantidade * preco_unitario * (1 - desconto_percentual/100))
+        FROM #itens_venda;
+        
+        -- Inserir venda
+        INSERT INTO tbvenda (
+            id_cliente, id_condicao_pagamento, id_endereco_entrega, 
+            data_venda, status_venda, status_pagamento, observacao
+        )
+        VALUES (
+            @id_cliente, @id_condicao_pagamento, @id_endereco_entrega,
+            GETDATE(), 'APROVADO', 'PENDENTE', @observacao
+        );
+        
+        SET @id_venda = SCOPE_IDENTITY();
+        
+        -- Inserir itens da venda
+        INSERT INTO tbitemvenda (id_venda, id_produto, quantidade, preco_unitario, desconto_percentual)
+        SELECT @id_venda, id_produto, quantidade, preco_unitario, desconto_percentual
+        FROM #itens_venda;
+        
+        -- Gerar parcelas
+        DECLARE @num_parcelas INT;
+        DECLARE @taxa_juros DECIMAL(5,2);
+        DECLARE @dias_primeira_parcela INT;
+        
+        SELECT @num_parcelas = numero_parcelas, 
+               @taxa_juros = taxa_juros_percentual,
+               @dias_primeira_parcela = dias_primeira_parcela
+        FROM tbcondicaopagamento
+        WHERE id_condicao_pagamento = @id_condicao_pagamento;
+        
+        DECLARE @valor_parcela DECIMAL(10,2);
+        
+        IF @taxa_juros > 0 AND @num_parcelas > 1
+        BEGIN
+            -- Calcular parcela com juros compostos (Price)
+            DECLARE @taxa_mensal DECIMAL(10,10) = @taxa_juros / 100;
+            SET @valor_parcela = @valor_total * 
+                (@taxa_mensal * POWER(1 + @taxa_mensal, @num_parcelas)) / 
+                (POWER(1 + @taxa_mensal, @num_parcelas) - 1);
+        END
+        ELSE
+        BEGIN
+            SET @valor_parcela = @valor_total / @num_parcelas;
+        END
+        
+        -- Arredondar para 2 casas decimais
+        SET @valor_parcela = ROUND(@valor_parcela, 2);
+        
+        DECLARE @i INT = 1;
+        WHILE @i <= @num_parcelas
+        BEGIN
+            DECLARE @valor_ajustado DECIMAL(10,2) = @valor_parcela;
+            
+            -- Ajustar última parcela para não ter resto
+            IF @i = @num_parcelas
+            BEGIN
+                SET @valor_ajustado = @valor_total - (@valor_parcela * (@num_parcelas - 1));
+            END
+            
+            INSERT INTO tbparcela (
+                id_venda, numero_parcela, valor_parcela, 
+                data_vencimento, status_parcela
+            )
+            VALUES (
+                @id_venda, @i, @valor_ajustado,
+                DATEADD(DAY, @dias_primeira_parcela + ((@i-1) * 30), GETDATE()),
+                'PENDENTE'
+            );
+            SET @i = @i + 1;
+        END
+        
+        -- Registrar saída do estoque (para cada item)
+        INSERT INTO tbmovimentoestoque (id_produto, tipo_movimento, quantidade, 
+                                        quantidade_antes, quantidade_depois, id_venda)
+        SELECT 
+            iv.id_produto,
+            'SAIDA',
+            iv.quantidade,
+            ISNULL((
+                SELECT SUM(CASE WHEN tipo_movimento = 'ENTRADA' THEN quantidade ELSE -quantidade END)
+                FROM tbmovimentoestoque m
+                WHERE m.id_produto = iv.id_produto
+            ), 0),
+            ISNULL((
+                SELECT SUM(CASE WHEN tipo_movimento = 'ENTRADA' THEN quantidade ELSE -quantidade END)
+                FROM tbmovimentoestoque m
+                WHERE m.id_produto = iv.id_produto
+            ), 0) - iv.quantidade,
+            @id_venda
+        FROM tbitemvenda iv
+        WHERE iv.id_venda = @id_venda;
+        
+        -- Atualizar data última compra do cliente
+        UPDATE tbcadastrocliente
+        SET data_ultima_compra = CAST(GETDATE() AS DATE),
+            total_compras = total_compras + @valor_total
+        WHERE id_cliente = @id_cliente;
+        
+        -- Commit da transação
+        COMMIT TRANSACTION;
+        
+        -- Limpar tabela temporária
+        DROP TABLE #itens_venda;
+        
+        -- Retornar ID da venda
+        SELECT @id_venda AS id_venda, 'Venda realizada com sucesso' AS mensagem;
+        
+    END TRY
+    BEGIN CATCH
+        ROLLBACK TRANSACTION;
+        
+        -- Limpar tabela temporária se existir
+        IF OBJECT_ID('tempdb..#itens_venda') IS NOT NULL
+            DROP TABLE #itens_venda;
+        
+        -- Retornar erro detalhado
+        SELECT 
+            ERROR_NUMBER() AS erro_numero,
+            ERROR_MESSAGE() AS erro_mensagem,
+            ERROR_PROCEDURE() AS erro_procedure,
+            ERROR_LINE() AS erro_linha;
+        
+        THROW;
+    END CATCH
+END
+GO
+
+-- ==================================================
+-- SP: BAIXAR PARCELA - CORRIGIDA
+-- ==================================================
+CREATE OR ALTER PROCEDURE sp_baixar_parcela
+    @id_parcela INT,
+    @valor_pago DECIMAL(10,2),
+    @data_pagamento DATE = NULL,
+    @desconto_juros DECIMAL(10,2) = 0
+AS
+BEGIN
+    SET NOCOUNT ON;
+    
+    BEGIN TRY
+        BEGIN TRANSACTION;
+        
+        IF @data_pagamento IS NULL
+            SET @data_pagamento = GETDATE();
+        
+        DECLARE @id_venda INT;
+        DECLARE @valor_parcela_original DECIMAL(10,2);
+        DECLARE @data_vencimento DATE;
+        
+        -- Buscar informações da parcela
+        SELECT @id_venda = id_venda, 
+               @valor_parcela_original = valor_parcela,
+               @data_vencimento = data_vencimento
+        FROM tbparcela
+        WHERE id_parcela = @id_parcela;
+        
+        -- Calcular juros se estiver atrasado
+        DECLARE @dias_atraso INT = DATEDIFF(DAY, @data_vencimento, @data_pagamento);
+        DECLARE @juros_calculado DECIMAL(10,2) = 0;
+        
+        IF @dias_atraso > 0
+        BEGIN
+            -- Juros de 1% ao mês (proporcional aos dias)
+            SET @juros_calculado = @valor_parcela_original * (0.01 * (@dias_atraso / 30.0));
+            -- Limitar juros a 10% do valor
+            IF @juros_calculado > @valor_parcela_original * 0.10
+                SET @juros_calculado = @valor_parcela_original * 0.10;
+        END
+        
+        -- Aplicar desconto se houver
+        SET @juros_calculado = @juros_calculado - @desconto_juros;
+        IF @juros_calculado < 0
+            SET @juros_calculado = 0;
+        
+        -- Atualizar parcela
+        UPDATE tbparcela
+        SET data_pagamento = @data_pagamento,
+            valor_pago = @valor_pago,
+            status_parcela = CASE 
+                                WHEN @valor_pago >= @valor_parcela_original THEN 'PAGO'
+                                ELSE 'PENDENTE'
+                             END,
+            juros_mora = @juros_calculado
+        WHERE id_parcela = @id_parcela;
+        
+        -- Verificar se todas as parcelas foram pagas
+        DECLARE @total_parcelas INT;
+        DECLARE @parcelas_pagas INT;
+        
+        SELECT @total_parcelas = COUNT(*), 
+               @parcelas_pagas = SUM(CASE WHEN status_parcela IN ('PAGO', 'QUITADO') THEN 1 ELSE 0 END)
+        FROM tbparcela
+        WHERE id_venda = @id_venda;
+        
+        -- Atualizar status da venda
+        IF @total_parcelas = @parcelas_pagas
+        BEGIN
+            UPDATE tbvenda
+            SET status_pagamento = 'QUITADO'
+            WHERE id_venda = @id_venda;
+        END
+        ELSE IF @parcelas_pagas > 0
+        BEGIN
+            UPDATE tbvenda
+            SET status_pagamento = 'PARCIAL'
+            WHERE id_venda = @id_venda;
+        END
+        
+        COMMIT TRANSACTION;
+        
+        -- Retornar resultado
+        SELECT 
+            @id_parcela AS id_parcela,
+            'Parcela baixada com sucesso' AS mensagem,
+            @juros_calculado AS juros_cobrados;
+        
+    END TRY
+    BEGIN CATCH
+        ROLLBACK TRANSACTION;
+        
+        SELECT 
+            ERROR_NUMBER() AS erro_numero,
+            ERROR_MESSAGE() AS erro_mensagem;
+        
+        THROW;
+    END CATCH
+END
+GO
+
+-- ==================================================
+-- SP: ENTRADA DE ESTOQUE (COMPRA) - CORRIGIDA
+-- ==================================================
+CREATE OR ALTER PROCEDURE sp_entrada_estoque
+    @id_fornecedor INT,
+    @numero_nota_fiscal VARCHAR(50),
+    @itens_compra NVARCHAR(MAX), -- JSON em vez de TABLE
+    @observacao VARCHAR(MAX) = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+    BEGIN TRANSACTION;
+    
+    BEGIN TRY
+        DECLARE @id_compra INT;
+        DECLARE @valor_total DECIMAL(12,2);
+        
+        -- Criar tabela temporária para os itens
+        CREATE TABLE #itens_compra (
+            id_produto INT,
+            quantidade INT,
+            preco_custo DECIMAL(10,2)
+        );
+        
+        -- Inserir dados do JSON na tabela temporária
+        INSERT INTO #itens_compra (id_produto, quantidade, preco_custo)
+        SELECT id_produto, quantidade, preco_custo
+        FROM OPENJSON(@itens_compra)
+        WITH (
+            id_produto INT '$.id_produto',
+            quantidade INT '$.quantidade',
+            preco_custo DECIMAL(10,2) '$.preco_custo'
+        );
+        
+        -- Verificar se há itens
+        IF NOT EXISTS (SELECT 1 FROM #itens_compra)
+        BEGIN
+            RAISERROR('Nenhum item informado para a compra', 16, 1);
+            RETURN;
+        END
+        
+        -- Calcular valor total
+        SELECT @valor_total = SUM(quantidade * preco_custo)
+        FROM #itens_compra;
+        
+        -- Verificar se a nota fiscal já existe
+        IF EXISTS (SELECT 1 FROM tbcompra WHERE numero_nota_fiscal = @numero_nota_fiscal)
+        BEGIN
+            RAISERROR('Nota fiscal %s já cadastrada', 16, 1, @numero_nota_fiscal);
+            RETURN;
+        END
+        
+        -- Inserir compra
+        INSERT INTO tbcompra (
+            id_fornecedor, numero_nota_fiscal, data_compra, 
+            data_entrada_estoque, valor_total, status_compra, observacao
+        )
+        VALUES (
+            @id_fornecedor, @numero_nota_fiscal, GETDATE(),
+            GETDATE(), @valor_total, 'RECEBIDO', @observacao
+        );
+        
+        SET @id_compra = SCOPE_IDENTITY();
+        
+        -- Inserir itens da compra
+        INSERT INTO tbitemcompra (id_compra, id_produto, quantidade, preco_custo)
+        SELECT @id_compra, id_produto, quantidade, preco_custo
+        FROM #itens_compra;
+        
+        -- Atualizar preço de custo do produto (média ponderada)
+        UPDATE p
+        SET p.preco_custo = (
+            SELECT ISNULL(AVG(preco_custo), 0)
+            FROM tbitemcompra ic
+            WHERE ic.id_produto = p.id_produto
+        )
+        FROM tbproduto p
+        WHERE p.id_produto IN (SELECT id_produto FROM #itens_compra);
+        
+        -- Registrar entrada no estoque
+        INSERT INTO tbmovimentoestoque (id_produto, tipo_movimento, quantidade, 
+                                        quantidade_antes, quantidade_depois, id_compra)
+        SELECT 
+            ic.id_produto,
+            'ENTRADA',
+            ic.quantidade,
+            ISNULL((
+                SELECT SUM(CASE WHEN tipo_movimento = 'ENTRADA' THEN quantidade ELSE -quantidade END)
+                FROM tbmovimentoestoque m
+                WHERE m.id_produto = ic.id_produto
+            ), 0),
+            ISNULL((
+                SELECT SUM(CASE WHEN tipo_movimento = 'ENTRADA' THEN quantidade ELSE -quantidade END)
+                FROM tbmovimentoestoque m
+                WHERE m.id_produto = ic.id_produto
+            ), 0) + ic.quantidade,
+            @id_compra
+        FROM tbitemcompra ic
+        WHERE ic.id_compra = @id_compra;
+        
+        -- Atualizar quantidade na tabela de estoque atual (se existir)
+        IF EXISTS (SELECT 1 FROM sys.tables WHERE name = 'tbestoque_atual')
+        BEGIN
+            MERGE INTO tbestoque_atual AS target
+            USING (
+                SELECT 
+                    id_produto,
+                    SUM(quantidade) AS total_entrada
+                FROM #itens_compra
+                GROUP BY id_produto
+            ) AS source ON target.id_produto = source.id_produto
+            WHEN MATCHED THEN
+                UPDATE SET 
+                    quantidade_atual = target.quantidade_atual + source.total_entrada,
+                    total_entradas = target.total_entradas + source.total_entrada,
+                    ultima_atualizacao = GETDATE()
+            WHEN NOT MATCHED THEN
+                INSERT (id_produto, quantidade_atual, total_entradas, total_saidas)
+                VALUES (source.id_produto, source.total_entrada, source.total_entrada, 0);
+        END
+        
+        COMMIT TRANSACTION;
+        
+        -- Limpar tabela temporária
+        DROP TABLE #itens_compra;
+        
+        -- Retornar resultado
+        SELECT 
+            @id_compra AS id_compra, 
+            @valor_total AS valor_total,
+            'Entrada de estoque realizada com sucesso' AS mensagem;
+        
+    END TRY
+    BEGIN CATCH
+        ROLLBACK TRANSACTION;
+        
+        -- Limpar tabela temporária se existir
+        IF OBJECT_ID('tempdb..#itens_compra') IS NOT NULL
+            DROP TABLE #itens_compra;
+        
+        -- Retornar erro detalhado
+        SELECT 
+            ERROR_NUMBER() AS erro_numero,
+            ERROR_MESSAGE() AS erro_mensagem,
+            ERROR_PROCEDURE() AS erro_procedure,
+            ERROR_LINE() AS erro_linha;
+        
+        THROW;
+    END CATCH
+END
+GO
+
+-- ==================================================
+-- EXEMPLOS DE USO DAS PROCEDURES CORRIGIDAS
+-- ==================================================
+
+/*
+-- Exemplo 1: Realizar venda
+DECLARE @itens_venda NVARCHAR(MAX) = '
+[
+    {"id_produto": 1, "quantidade": 2, "preco_unitario": 1500.00, "desconto_percentual": 5},
+    {"id_produto": 2, "quantidade": 1, "preco_unitario": 2500.00, "desconto_percentual": 0}
+]';
+
+EXEC sp_realizar_venda 
+    @id_cliente = 1,
+    @id_condicao_pagamento = 1,
+    @id_endereco_entrega = 1,
+    @itens_venda = @itens_venda,
+    @observacao = 'Venda realizada online';
+
+-- Exemplo 2: Baixar parcela
+EXEC sp_baixar_parcela
+    @id_parcela = 1,
+    @valor_pago = 500.00,
+    @data_pagamento = '2024-01-15',
+    @desconto_juros = 0;
+
+-- Exemplo 3: Entrada de estoque
+DECLARE @itens_compra NVARCHAR(MAX) = '
+[
+    {"id_produto": 1, "quantidade": 10, "preco_custo": 800.00},
+    {"id_produto": 2, "quantidade": 5, "preco_custo": 1200.00}
+]';
+
+EXEC sp_entrada_estoque
+    @id_fornecedor = 1,
+    @numero_nota_fiscal = 'NF-12345',
+    @itens_compra = @itens_compra,
+    @observacao = 'Compra mensal';
+*/

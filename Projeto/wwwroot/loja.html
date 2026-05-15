@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vendas | ElectroNext</title>
+  <style>
+    :root{
+      --bg:#050914; --panel:#0c1424; --panel2:#111b2e; --line:#22304a;
+      --txt:#f4f7fb; --muted:#8fa1bd; --cyan:#18d7ff; --cyan2:#00a6ff;
+      --danger:#ff5570; --success:#42f59b; --warning:#ffd166;
+      --shadow:0 18px 50px rgba(0,0,0,.35);
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,Arial,sans-serif;background:radial-gradient(circle at top left,#102243 0,#050914 40%,#03050b 100%);color:var(--txt);min-height:100vh}
+    header{position:sticky;top:0;z-index:20;background:rgba(5,9,20,.82);backdrop-filter:blur(16px);border-bottom:1px solid var(--line)}
+    .nav{max-width:1220px;margin:auto;padding:16px 22px;display:flex;align-items:center;justify-content:space-between;gap:18px}
+    .brand{display:flex;align-items:center;gap:12px;font-weight:900;font-size:22px;letter-spacing:.2px}
+    .brand .icon{width:42px;height:42px;border-radius:14px;background:linear-gradient(135deg,var(--cyan),var(--cyan2));display:grid;place-items:center;color:#00101a;box-shadow:0 10px 28px rgba(24,215,255,.25)}
+    .brand span span{color:var(--cyan)}
+    .nav-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+    .pill{border:1px solid var(--line);background:rgba(17,27,46,.7);padding:10px 14px;border-radius:999px;color:var(--muted);font-size:14px;text-decoration:none}
+    .pill strong{color:var(--txt)}
+    .btn{border:0;border-radius:14px;padding:12px 16px;font-weight:800;cursor:pointer;transition:.2s;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:8px;color:#00101a;background:linear-gradient(135deg,var(--cyan),var(--cyan2))}
+    .btn:hover{transform:translateY(-1px);filter:brightness(1.08)}
+    .btn.ghost{background:transparent;color:var(--txt);border:1px solid var(--line)}
+    .btn.danger{background:transparent;color:var(--danger);border:1px solid rgba(255,85,112,.4)}
+    main{max-width:1220px;margin:auto;padding:26px 22px 40px}
+    .hero{display:grid;grid-template-columns:1.5fr .8fr;gap:18px;margin-bottom:22px}
+    .hero-card,.cart,.catalog-card,.modal-card{background:linear-gradient(180deg,rgba(17,27,46,.95),rgba(9,15,28,.95));border:1px solid var(--line);border-radius:26px;box-shadow:var(--shadow)}
+    .hero-card{padding:28px;min-height:210px;display:flex;flex-direction:column;justify-content:center;overflow:hidden;position:relative}
+    .hero-card:after{content:"";position:absolute;right:-80px;top:-80px;width:260px;height:260px;border-radius:50%;background:rgba(24,215,255,.12);filter:blur(5px)}
+    h1{margin:0 0 12px;font-size:clamp(30px,4vw,52px);line-height:1.05}
+    h1 span{color:var(--cyan)}
+    .subtitle{color:var(--muted);font-size:17px;max-width:620px;line-height:1.55;margin:0}
+    .quick{padding:22px;display:grid;gap:12px}
+    .quick h3{margin:0 0 6px;font-size:18px}
+    .quick-item{display:flex;align-items:center;gap:12px;padding:14px;border:1px solid var(--line);border-radius:18px;background:rgba(255,255,255,.025)}
+    .quick-item b{display:block}.quick-item span{color:var(--muted);font-size:13px}
+    .layout{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:22px;align-items:start}
+    .catalog-card{padding:22px}
+    .toolbar{display:grid;grid-template-columns:1fr 170px 120px;gap:12px;margin-bottom:20px}
+    input,select{width:100%;border:1px solid var(--line);background:#070d1b;color:var(--txt);border-radius:15px;padding:14px 16px;outline:none;font-size:14px}
+    input:focus,select:focus{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(24,215,255,.12)}
+    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px}
+    .card{background:rgba(255,255,255,.035);border:1px solid var(--line);border-radius:22px;overflow:hidden;display:flex;flex-direction:column;min-height:380px;transition:.2s}
+    .card:hover{transform:translateY(-3px);border-color:rgba(24,215,255,.55);box-shadow:0 16px 34px rgba(0,0,0,.25)}
+    .thumb{height:165px;background:#fff;display:grid;place-items:center;overflow:hidden}
+    .thumb img{width:100%;height:100%;object-fit:cover}
+    .card-body{padding:16px;display:flex;flex-direction:column;gap:10px;flex:1}
+    .card h3{margin:0;font-size:17px;line-height:1.25}.card p{margin:0;color:var(--muted);font-size:13px;line-height:1.4;min-height:38px}
+    .meta{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:auto}.price{font-size:20px;font-weight:900;color:var(--cyan)}.stock{font-size:12px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:6px 9px}
+    .stock.low{color:var(--warning);border-color:rgba(255,209,102,.5)}.stock.out{color:var(--danger);border-color:rgba(255,85,112,.5)}
+    .add{margin-top:4px;width:100%;border:0;border-radius:14px;padding:12px;font-weight:900;cursor:pointer;color:#00101a;background:linear-gradient(135deg,var(--cyan),var(--cyan2))}.add:disabled{opacity:.45;cursor:not-allowed;filter:grayscale(1)}
+    .empty{padding:34px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:22px}
+    .cart{position:sticky;top:92px;padding:22px}.cart h2{margin:0 0 14px;font-size:24px}.cart-head{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line);padding-bottom:14px;margin-bottom:14px}.cart-count{color:var(--cyan);font-weight:900}
+    .cart-item{display:grid;grid-template-columns:1fr auto;gap:10px;padding:13px;border:1px solid var(--line);border-radius:16px;background:rgba(255,255,255,.025);margin-bottom:10px}.cart-item strong{font-size:14px}.cart-item small{color:var(--muted)}.qty{display:flex;align-items:center;gap:7px}.qty button{width:28px;height:28px;border-radius:9px;border:1px solid var(--line);background:#070d1b;color:var(--txt);cursor:pointer}.trash{background:transparent!important;color:var(--danger)!important;border:0!important}
+    .summary{border-top:1px solid var(--line);padding-top:16px;margin-top:14px}.row{display:flex;justify-content:space-between;color:var(--muted);margin:8px 0}.total{font-size:24px;color:var(--cyan);font-weight:900}.checkout{width:100%;margin-top:14px;padding:15px;border-radius:16px;border:0;background:linear-gradient(135deg,var(--cyan),var(--cyan2));color:#00101a;font-weight:900;cursor:pointer}.checkout:disabled{opacity:.5;cursor:not-allowed}
+    .login-warning{margin-top:12px;padding:12px;border:1px solid rgba(255,209,102,.35);background:rgba(255,209,102,.08);border-radius:14px;color:#ffe29a;font-size:13px;line-height:1.35}.ok{color:var(--success)}
+    .toast{position:fixed;right:22px;bottom:22px;background:#0d1728;border:1px solid var(--line);border-radius:16px;padding:14px 16px;box-shadow:var(--shadow);display:none;z-index:50}.toast.show{display:block}.toast b{color:var(--cyan)}
+    .modal{position:fixed;inset:0;background:rgba(0,0,0,.72);display:none;align-items:center;justify-content:center;padding:20px;z-index:60}.modal.show{display:flex}.modal-card{max-width:430px;width:100%;padding:24px;text-align:center}.modal-card h2{margin:0 0 8px}.modal-card p{color:var(--muted);line-height:1.5}.modal-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:18px}
+    @media(max-width:900px){.hero,.layout{grid-template-columns:1fr}.cart{position:relative;top:0}.toolbar{grid-template-columns:1fr}.nav{align-items:flex-start}.nav-actions{justify-content:flex-start}.grid{grid-template-columns:repeat(auto-fill,minmax(180px,1fr))}}
+  </style>
+</head>
+<body>
+<header>
+  <div class="nav">
+    <div class="brand"><div class="icon">⚡</div><span>Electro<span>Next</span></span></div>
+    <div class="nav-actions" id="areaUsuario"></div>
+  </div>
+</header>
+<main>
+  <section class="hero">
+    <div class="hero-card">
+      <h1>Catálogo de <span>vendas</span></h1>
+      <p class="subtitle">Acesse livremente, veja os produtos, monte seu carrinho e finalize a compra somente quando estiver logado.</p>
+    </div>
+    <div class="hero-card quick">
+      <h3>Como funciona</h3>
+      <div class="quick-item"><span>🛒</span><div><b>Catálogo liberado</b><span>Qualquer pessoa pode ver os produtos.</span></div></div>
+      <div class="quick-item"><span>🔐</span><div><b>Compra protegida</b><span>Login é pedido apenas ao finalizar.</span></div></div>
+    </div>
+  </section>
+
+  <section class="layout">
+    <div class="catalog-card">
+      <div class="toolbar">
+        <input type="search" id="busca" placeholder="Buscar por nome ou descrição..." />
+        <select id="ordenacao">
+          <option value="nome">Ordenar: Nome</option>
+          <option value="menor">Menor preço</option>
+          <option value="maior">Maior preço</option>
+          <option value="estoque">Maior estoque</option>
+        </select>
+        <button class="btn ghost" id="limparBusca">Limpar</button>
+      </div>
+      <div class="grid" id="listaProdutos"></div>
+    </div>
+
+    <aside class="cart">
+      <div class="cart-head"><h2>Seu carrinho</h2><span class="cart-count" id="contador">0 itens</span></div>
+      <div id="carrinhoItens"></div>
+      <div class="summary">
+        <div class="row"><span>Subtotal</span><strong id="subtotal">R$ 0,00</strong></div>
+        <div class="row"><span>Frete</span><strong class="ok">Grátis</strong></div>
+        <div class="row total"><span>Total</span><span id="total">R$ 0,00</span></div>
+        <button class="checkout" id="btnFinalizar">Finalizar compra</button>
+        <div id="avisoLogin" class="login-warning" style="display:none">Você pode navegar livremente. Para finalizar a compra, faça login ou crie sua conta.</div>
+      </div>
+    </aside>
+  </section>
+</main>
+
+<div class="modal" id="modalLogin">
+  <div class="modal-card">
+    <h2>Login necessário</h2>
+    <p>Seu carrinho foi salvo. Entre com sua conta para finalizar a compra com segurança.</p>
+    <div class="modal-actions">
+      <a class="btn" href="Telalogin.html?redirect=Telacompra.html">Fazer login</a>
+      <a class="btn ghost" href="Teacadastr.html">Criar conta</a>
+      <button class="btn ghost" id="fecharModal">Continuar olhando</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script src="api.js"></script>
+<script>
+  let produtos = [];
+  let carrinho = JSON.parse(localStorage.getItem('carrinho') || '[]');
+  const usuario = getUsuarioLogado();
+
+  const listaProdutos = document.getElementById('listaProdutos');
+  const carrinhoItens = document.getElementById('carrinhoItens');
+  const busca = document.getElementById('busca');
+  const ordenacao = document.getElementById('ordenacao');
+  const modalLogin = document.getElementById('modalLogin');
+
+  function renderUsuario(){
+    const area = document.getElementById('areaUsuario');
+    if(usuario){
+      area.innerHTML = `
+        <span class="pill">Logado como <strong>${usuario.nome}</strong></span>
+        <a class="btn ghost" href="admin.html?v=2">Admin</a>
+        <button class="btn danger" onclick="sair()">Sair</button>`;
+    } else {
+      area.innerHTML = `
+        <span class="pill">Catálogo livre</span>
+        <a class="btn ghost" href="Telalogin.html?redirect=loja.html">Login</a>
+        <a class="btn" href="Teacadastr.html">Criar conta</a>`;
+    }
+    document.getElementById('avisoLogin').style.display = usuario ? 'none' : 'block';
+  }
+
+  async function carregarProdutos(){
+    listaProdutos.innerHTML = '<div class="empty">Carregando produtos...</div>';
+    try{
+      produtos = await apiFetch('/api/produtos');
+      aplicarFiltros();
+      renderCarrinho();
+    }catch(e){
+      listaProdutos.innerHTML = `<div class="empty">Erro ao carregar produtos: ${e.message}</div>`;
+    }
+  }
+
+  function aplicarFiltros(){
+    const termo = busca.value.trim().toLowerCase();
+    let lista = produtos.filter(p => {
+      const nome = (p.nome || '').toLowerCase();
+      const desc = (p.descricao || '').toLowerCase();
+      return nome.includes(termo) || desc.includes(termo);
+    });
+    const ord = ordenacao.value;
+    if(ord === 'menor') lista.sort((a,b)=>(a.precoVenda||0)-(b.precoVenda||0));
+    if(ord === 'maior') lista.sort((a,b)=>(b.precoVenda||0)-(a.precoVenda||0));
+    if(ord === 'estoque') lista.sort((a,b)=>(b.estoque||0)-(a.estoque||0));
+    if(ord === 'nome') lista.sort((a,b)=>(a.nome||'').localeCompare(b.nome||''));
+    mostrarProdutos(lista);
+  }
+
+  function mostrarProdutos(lista){
+    if(!lista.length){
+      listaProdutos.innerHTML = '<div class="empty">Nenhum produto encontrado.</div>';
+      return;
+    }
+    listaProdutos.innerHTML = lista.map(p => {
+      const img = p.imagemUrl || 'teclado.jpg';
+      const estoque = Number(p.estoque || 0);
+      const classeEstoque = estoque <= 0 ? 'out' : estoque <= 3 ? 'low' : '';
+      const textoEstoque = estoque <= 0 ? 'Sem estoque' : `${estoque} em estoque`;
+      return `
+      <article class="card">
+        <div class="thumb"><img src="${img}" alt="${escapeHtml(p.nome)}" onerror="this.src='teclado.jpg'"></div>
+        <div class="card-body">
+          <h3>${escapeHtml(p.nome)}</h3>
+          <p>${escapeHtml(p.descricao || 'Produto disponível na ElectroNext.')}</p>
+          <div class="meta"><span class="price">${moeda(p.precoVenda)}</span><span class="stock ${classeEstoque}">${textoEstoque}</span></div>
+          <button class="add" ${estoque <= 0 ? 'disabled' : ''} onclick="adicionar(${p.id})">${estoque <= 0 ? 'Indisponível' : 'Adicionar ao carrinho'}</button>
+        </div>
+      </article>`;
+    }).join('');
+  }
+
+  function adicionar(id){
+    const prod = produtos.find(p => p.id === id);
+    if(!prod) return;
+    const estoque = Number(prod.estoque || 0);
+    const item = carrinho.find(i => i.produtoId === id);
+    const atual = item ? item.quantidade : 0;
+    if(atual + 1 > estoque){ mostrarToast('Estoque insuficiente para esse produto.'); return; }
+    if(item) item.quantidade++;
+    else carrinho.push({ produtoId: prod.id, nome: prod.nome, preco: prod.precoVenda, quantidade: 1, imagemUrl: prod.imagemUrl || '' });
+    salvarCarrinho();
+    mostrarToast(`<b>${escapeHtml(prod.nome)}</b> adicionado ao carrinho.`);
+  }
+
+  function alterar(id, delta){
+    const item = carrinho.find(i => i.produtoId === id);
+    const prod = produtos.find(p => p.id === id);
+    if(!item) return;
+    const estoque = Number(prod?.estoque || 9999);
+    if(delta > 0 && item.quantidade + delta > estoque){ mostrarToast('Estoque insuficiente.'); return; }
+    item.quantidade += delta;
+    if(item.quantidade <= 0) carrinho = carrinho.filter(i => i.produtoId !== id);
+    salvarCarrinho();
+  }
+
+  function salvarCarrinho(){
+    localStorage.setItem('carrinho', JSON.stringify(carrinho));
+    renderCarrinho();
+  }
+
+  function renderCarrinho(){
+    let total = 0;
+    const qtd = carrinho.reduce((s,i)=>s+i.quantidade,0);
+    document.getElementById('contador').textContent = `${qtd} ${qtd === 1 ? 'item' : 'itens'}`;
+    if(!carrinho.length){
+      carrinhoItens.innerHTML = '<div class="empty">Seu carrinho está vazio.</div>';
+    } else {
+      carrinhoItens.innerHTML = carrinho.map(item => {
+        total += Number(item.preco || 0) * item.quantidade;
+        return `
+        <div class="cart-item">
+          <div><strong>${escapeHtml(item.nome)}</strong><br><small>${moeda(item.preco)} cada</small></div>
+          <div class="qty">
+            <button onclick="alterar(${item.produtoId},-1)">-</button>
+            <b>${item.quantidade}</b>
+            <button onclick="alterar(${item.produtoId},1)">+</button>
+            <button class="trash" onclick="alterar(${item.produtoId},-999)">🗑</button>
+          </div>
+        </div>`;
+      }).join('');
+    }
+    document.getElementById('subtotal').textContent = moeda(total);
+    document.getElementById('total').textContent = moeda(total);
+    document.getElementById('btnFinalizar').disabled = carrinho.length === 0;
+  }
+
+  document.getElementById('btnFinalizar').addEventListener('click', () => {
+    if(!carrinho.length) return;
+    if(!getUsuarioLogado()){
+      modalLogin.classList.add('show');
+      return;
+    }
+    window.location.href = 'Telacompra.html';
+  });
+
+  document.getElementById('fecharModal').addEventListener('click',()=>modalLogin.classList.remove('show'));
+  modalLogin.addEventListener('click', e => { if(e.target === modalLogin) modalLogin.classList.remove('show'); });
+  busca.addEventListener('input', aplicarFiltros);
+  ordenacao.addEventListener('change', aplicarFiltros);
+  document.getElementById('limparBusca').addEventListener('click',()=>{ busca.value=''; ordenacao.value='nome'; aplicarFiltros(); });
+
+  function mostrarToast(html){
+    const t = document.getElementById('toast');
+    t.innerHTML = html;
+    t.classList.add('show');
+    clearTimeout(window.__toastTimer);
+    window.__toastTimer = setTimeout(()=>t.classList.remove('show'),2400);
+  }
+
+  function escapeHtml(text){
+    return String(text || '').replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
+  }
+
+  renderUsuario();
+  carregarProdutos();
+</script>
+</body>
+</html>

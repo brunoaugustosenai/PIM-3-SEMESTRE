@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Catálogo | ElectroNext</title>
+  <link rel="stylesheet" href="style-loja.css">
+</head>
+<body>
+<header>
+  <div class="logo">Electro<span>Next</span></div>
+  <button onclick="sair()" style="padding:10px 16px;border-radius:8px;border:0;cursor:pointer">Sair</button>
+</header>
+
+<div class="container">
+  <div class="produtos">
+    <div class="topo">
+      <input type="text" id="busca" placeholder="Buscar produto..." onkeyup="filtrar()">
+      <select id="categoria" onchange="filtrar()"><option value="">Todos</option><option value="eletronico">Eletrônicos</option></select>
+    </div>
+    <div class="grid" id="listaProdutos"></div>
+  </div>
+
+  <div class="carrinho">
+    <h2>Seu Carrinho</h2>
+    <div id="carrinhoItens"></div>
+    <hr>
+    <p class="total">Total: <span id="total">R$ 0,00</span></p>
+    <a href="Telacompra.html"><button class="finalizar">Finalizar Compra</button></a>
+  </div>
+</div>
+
+<script src="api.js"></script>
+<script>
+  exigirLogin();
+  let produtos = [];
+  let carrinho = JSON.parse(localStorage.getItem('carrinho') || '[]');
+
+  async function carregarProdutos() {
+    produtos = await apiFetch('/api/produtos');
+    mostrarProdutos(produtos);
+    renderCarrinho();
+  }
+
+  function mostrarProdutos(lista) {
+    const div = document.getElementById('listaProdutos');
+    div.innerHTML = '';
+    if (!lista.length) {
+      div.innerHTML = '<p>Nenhum produto encontrado.</p>';
+      return;
+    }
+    lista.forEach((p) => {
+      const imagem = p.imagemUrl || 'teclado.jpg';
+      div.innerHTML += `
+        <div class="card">
+          <img src="${imagem}" alt="${p.nome}" style="width:100%;height:160px;object-fit:cover;border-radius:8px;">
+          <h3>${p.nome}</h3>
+          <p>${p.descricao || ''}</p>
+          <p style="color:#00d4ff;font-weight:bold;">${moeda(p.precoVenda)}</p>
+          <small>Estoque: ${p.estoque}</small>
+          <button style="width:100%;padding:10px;cursor:pointer;background:transparent;color:#00d4ff;border:1px solid #00d4ff;border-radius:5px;" onclick="add(${p.id})">Adicionar</button>
+        </div>`;
+    });
+  }
+
+  function filtrar() {
+    const busca = document.getElementById('busca').value.toLowerCase();
+    const filtrados = produtos.filter(p => p.nome.toLowerCase().includes(busca) || (p.descricao || '').toLowerCase().includes(busca));
+    mostrarProdutos(filtrados);
+  }
+
+  function add(id) {
+    const prod = produtos.find(p => p.id === id);
+    const item = carrinho.find(i => i.produtoId === id);
+    if (item) item.quantidade++;
+    else carrinho.push({ produtoId: prod.id, nome: prod.nome, preco: prod.precoVenda, quantidade: 1 });
+    salvar();
+  }
+
+  function alterar(id, delta) {
+    const item = carrinho.find(i => i.produtoId === id);
+    if (!item) return;
+    item.quantidade += delta;
+    if (item.quantidade <= 0) carrinho = carrinho.filter(i => i.produtoId !== id);
+    salvar();
+  }
+
+  function salvar() {
+    localStorage.setItem('carrinho', JSON.stringify(carrinho));
+    renderCarrinho();
+  }
+
+  function renderCarrinho() {
+    const div = document.getElementById('carrinhoItens');
+    div.innerHTML = '';
+    let total = 0;
+    if (!carrinho.length) div.innerHTML = '<p style="color:#888;text-align:center;margin-top:20px;">Seu carrinho está vazio.</p>';
+    carrinho.forEach(item => {
+      total += item.preco * item.quantidade;
+      div.innerHTML += `
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;background:#1a1a1a;padding:10px;border-radius:8px;border:1px solid #333;">
+          <span style="font-size:14px;flex:1;">${item.nome}</span>
+          <div style="display:flex;align-items:center;gap:10px;margin:0 15px;">
+            <button onclick="alterar(${item.produtoId}, -1)">-</button><span>${item.quantidade}</span><button onclick="alterar(${item.produtoId}, 1)">+</button>
+          </div>
+          <button style="background:transparent;color:#ff4757;border:none;font-size:16px;cursor:pointer;" onclick="alterar(${item.produtoId}, -999)">🗑️</button>
+        </div>`;
+    });
+    document.getElementById('total').textContent = moeda(total);
+  }
+
+  carregarProdutos().catch(e => alert(e.message));
+</script>
+</body>
+</html>

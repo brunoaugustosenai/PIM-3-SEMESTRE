@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Compra Confirmada | ElectroNext</title>
+  <link rel="stylesheet" href="style-finalizacao.css">
+</head>
+<body>
+  <main class="container">
+    <div class="card">
+      <h1>✅ Compra finalizada!</h1>
+      <p id="detalhes" class="details">Seu pedido foi registrado com sucesso.</p>
+      <a href="loja.html"><button class="btn-home">Voltar para a Loja</button></a>
+    </div>
+  </main>
+  <script src="api.js"></script>
+  <script>
+    const venda = JSON.parse(localStorage.getItem('ultimaVenda') || 'null');
+    if (venda) detalhes.textContent = `Pedido nº ${venda.id} confirmado. Total: ${moeda(venda.valorTotal)}.`;
+  </script>
+</body>
+</html>

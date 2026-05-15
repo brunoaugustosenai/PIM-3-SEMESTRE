@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Criar conta | ElectroNext</title>
+  <style>
+    :root {
+      --bg: #050914;
+      --panel: rgba(15, 23, 42, 0.94);
+      --panel-2: rgba(2, 8, 23, 0.92);
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --line: rgba(148, 163, 184, 0.18);
+      --cyan: #06d9ff;
+      --blue: #2563eb;
+      --green: #22c55e;
+      --red: #fb7185;
+      --shadow: 0 24px 70px rgba(0, 0, 0, 0.48);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Arial, Helvetica, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 20% 10%, rgba(6, 217, 255, 0.20), transparent 30%),
+        radial-gradient(circle at 80% 0%, rgba(37, 99, 235, 0.25), transparent 28%),
+        linear-gradient(135deg, #020617 0%, #07111f 48%, #020617 100%);
+      display: grid;
+      place-items: center;
+      padding: 26px 16px;
+    }
+
+    .page {
+      width: min(1080px, 100%);
+      display: grid;
+      grid-template-columns: 1fr 1.05fr;
+      gap: 22px;
+      align-items: stretch;
+    }
+
+    .hero, .card {
+      border: 1px solid var(--line);
+      border-radius: 28px;
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .hero {
+      padding: 34px;
+      position: relative;
+      min-height: 590px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .hero::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(120deg, rgba(6, 217, 255, 0.10), transparent 46%),
+        radial-gradient(circle at 85% 80%, rgba(6, 217, 255, 0.16), transparent 30%);
+      pointer-events: none;
+    }
+
+    .brand, .hero-content, .benefits { position: relative; z-index: 1; }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      font-weight: 900;
+      font-size: 26px;
+      letter-spacing: -0.8px;
+    }
+
+    .brand-icon {
+      width: 48px;
+      height: 48px;
+      display: grid;
+      place-items: center;
+      border-radius: 16px;
+      background: linear-gradient(135deg, var(--cyan), var(--blue));
+      box-shadow: 0 12px 32px rgba(6, 217, 255, 0.22);
+    }
+
+    .brand span { color: var(--cyan); }
+
+    .hero h1 {
+      font-size: clamp(32px, 5vw, 56px);
+      line-height: 1;
+      margin: 0 0 18px;
+      letter-spacing: -2px;
+    }
+
+    .hero p {
+      max-width: 480px;
+      margin: 0;
+      color: var(--muted);
+      font-size: 17px;
+      line-height: 1.6;
+    }
+
+    .benefits {
+      display: grid;
+      gap: 12px;
+      margin-top: 34px;
+    }
+
+    .benefit {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: #dbeafe;
+      background: rgba(2, 8, 23, 0.45);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 14px 16px;
+    }
+
+    .card {
+      padding: 30px;
+      background: var(--panel-2);
+    }
+
+    .top-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .ghost-link {
+      color: var(--text);
+      text-decoration: none;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 10px 14px;
+      font-size: 14px;
+      background: rgba(15, 23, 42, 0.55);
+    }
+
+    .ghost-link:hover { border-color: rgba(6, 217, 255, 0.7); color: var(--cyan); }
+
+    .card h2 {
+      margin: 0;
+      font-size: 30px;
+      letter-spacing: -0.8px;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      margin: 8px 0 24px;
+      line-height: 1.5;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .field { margin-bottom: 14px; }
+    .field.full { grid-column: 1 / -1; }
+
+    label {
+      display: block;
+      margin: 0 0 7px;
+      color: #cbd5e1;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .input-wrap { position: relative; }
+
+    input {
+      width: 100%;
+      border: 1px solid rgba(148, 163, 184, 0.22);
+      outline: none;
+      border-radius: 15px;
+      padding: 14px 14px;
+      background: #020817;
+      color: var(--text);
+      font-size: 15px;
+      transition: 0.2s ease;
+    }
+
+    input::placeholder { color: #64748b; }
+    input:focus { border-color: var(--cyan); box-shadow: 0 0 0 4px rgba(6, 217, 255, 0.10); }
+
+    .toggle-pass {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      border: 0;
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      font-weight: 700;
+      padding: 6px;
+    }
+
+    .password-strength {
+      height: 7px;
+      background: rgba(148, 163, 184, 0.18);
+      border-radius: 999px;
+      overflow: hidden;
+      margin-top: 9px;
+    }
+
+    .password-strength span {
+      display: block;
+      height: 100%;
+      width: 0%;
+      background: var(--red);
+      transition: 0.25s ease;
+    }
+
+    .terms {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      color: #cbd5e1;
+      font-size: 14px;
+      line-height: 1.45;
+      margin: 6px 0 18px;
+    }
+
+    .terms input { width: 18px; height: 18px; margin-top: 1px; accent-color: var(--cyan); }
+    .terms a { color: var(--cyan); text-decoration: none; }
+
+    .btn {
+      width: 100%;
+      border: 0;
+      border-radius: 16px;
+      padding: 15px 18px;
+      background: linear-gradient(135deg, var(--cyan), #0ea5e9);
+      color: #00111a;
+      font-weight: 900;
+      font-size: 16px;
+      cursor: pointer;
+      box-shadow: 0 16px 38px rgba(6, 217, 255, 0.22);
+      transition: 0.2s ease;
+    }
+
+    .btn:hover { transform: translateY(-1px); filter: brightness(1.05); }
+    .btn:disabled { opacity: 0.65; cursor: not-allowed; transform: none; }
+
+    .feedback {
+      min-height: 22px;
+      margin-top: 14px;
+      font-weight: 800;
+      text-align: center;
+    }
+
+    .feedback.erro { color: var(--red); }
+    .feedback.ok { color: var(--green); }
+
+    .login-link {
+      text-align: center;
+      margin-top: 20px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .login-link a { color: var(--cyan); text-decoration: none; font-weight: 800; }
+
+    @media (max-width: 880px) {
+      .page { grid-template-columns: 1fr; }
+      .hero { min-height: auto; gap: 50px; }
+    }
+
+    @media (max-width: 560px) {
+      body { padding: 0; display: block; }
+      .page { min-height: 100vh; }
+      .hero { display: none; }
+      .card { min-height: 100vh; border-radius: 0; border: 0; padding: 26px 18px; }
+      .top-actions { justify-content: center; }
+      .grid { grid-template-columns: 1fr; }
+      .field.full { grid-column: auto; }
+      .card h2 { text-align: center; }
+      .subtitle { text-align: center; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="hero">
+      <div class="brand">
+        <div class="brand-icon">⚡</div>
+        <div>Electro<span>Next</span></div>
+      </div>
+
+      <div class="hero-content">
+        <h1>Crie sua conta e compre com mais rapidez.</h1>
+        <p>Acesse seu carrinho, finalize pedidos e acompanhe suas compras em uma experiência simples e moderna.</p>
+      </div>
+
+      <div class="benefits">
+        <div class="benefit">✅ Cadastro rápido e seguro</div>
+        <div class="benefit">🛒 Carrinho salvo para finalizar depois</div>
+        <div class="benefit">🔐 Seus dados protegidos no sistema</div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="top-actions">
+        <a class="ghost-link" href="loja.html">Ir para loja</a>
+        <a class="ghost-link" href="Telalogin.html">Entrar</a>
+      </div>
+
+      <h2>Criar conta</h2>
+      <p class="subtitle">Preencha seus dados para liberar a finalização de compras.</p>
+
+      <form id="formCadastro" autocomplete="on">
+        <div class="grid">
+          <div class="field full">
+            <label for="nome">Nome completo</label>
+            <input type="text" id="nome" placeholder="Digite seu nome:" maxlength="150" required />
+          </div>
+
+          <div class="field">
+            <label for="email">E-mail</label>
+            <input type="email" id="email" placeholder="seuemail@email.com" maxlength="120" required />
+          </div>
+
+          <div class="field">
+            <label for="telefone">Telefone</label>
+            <input type="tel" id="telefone" placeholder="(00) 00000-0000" maxlength="20" />
+          </div>
+
+          <div class="field">
+            <label for="senha">Senha</label>
+            <div class="input-wrap">
+              <input type="password" id="senha" placeholder="Mínimo 8 caracteres" minlength="8" required />
+              <button class="toggle-pass" type="button" data-target="senha">Ver</button>
+            </div>
+            <div class="password-strength"><span id="barraSenha"></span></div>
+          </div>
+
+          <div class="field">
+            <label for="confirmar">Confirmar senha</label>
+            <div class="input-wrap">
+              <input type="password" id="confirmar" placeholder="Digite a senha novamente" minlength="8" required />
+              <button class="toggle-pass" type="button" data-target="confirmar">Ver</button>
+            </div>
+          </div>
+        </div>
+
+        <label class="terms">
+          <input type="checkbox" id="termos" />
+          <span>Aceito os <a href="#">Termos de Uso</a> e a <a href="#">Política de Privacidade</a>.</span>
+        </label>
+
+        <button class="btn" id="btnCadastrar" type="submit">Criar conta</button>
+        <div id="mensagem" class="feedback"></div>
+      </form>
+
+      <div class="login-link">Já tem conta? <a href="Telalogin.html">Faça login</a></div>
+    </section>
+  </main>
+
+  <script src="api.js"></script>
+  <script>
+    const form = document.getElementById('formCadastro');
+    const nome = document.getElementById('nome');
+    const email = document.getElementById('email');
+    const telefone = document.getElementById('telefone');
+    const senha = document.getElementById('senha');
+    const confirmar = document.getElementById('confirmar');
+    const termos = document.getElementById('termos');
+    const msg = document.getElementById('mensagem');
+    const btn = document.getElementById('btnCadastrar');
+    const barraSenha = document.getElementById('barraSenha');
+
+    telefone.addEventListener('input', () => {
+      let v = telefone.value.replace(/\D/g, '').slice(0, 11);
+      if (v.length > 10) {
+        v = v.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
+      } else if (v.length > 6) {
+        v = v.replace(/(\d{2})(\d{4})(\d{0,4})/, '($1) $2-$3');
+      } else if (v.length > 2) {
+        v = v.replace(/(\d{2})(\d{0,5})/, '($1) $2');
+      }
+      telefone.value = v;
+    });
+
+    senha.addEventListener('input', () => {
+      const valor = senha.value;
+      let pontos = 0;
+      if (valor.length >= 8) pontos++;
+      if (/[A-Z]/.test(valor)) pontos++;
+      if (/[0-9]/.test(valor)) pontos++;
+      if (/[^A-Za-z0-9]/.test(valor)) pontos++;
+
+      const largura = [0, 28, 52, 76, 100][pontos];
+      const cor = pontos <= 1 ? '#fb7185' : pontos === 2 ? '#f59e0b' : pontos === 3 ? '#06d9ff' : '#22c55e';
+      barraSenha.style.width = largura + '%';
+      barraSenha.style.background = cor;
+    });
+
+    document.querySelectorAll('.toggle-pass').forEach(botao => {
+      botao.addEventListener('click', () => {
+        const input = document.getElementById(botao.dataset.target);
+        const mostrar = input.type === 'password';
+        input.type = mostrar ? 'text' : 'password';
+        botao.textContent = mostrar ? 'Ocultar' : 'Ver';
+      });
+    });
+
+    function mostrarMensagem(texto, tipo) {
+      msg.textContent = texto;
+      msg.className = 'feedback ' + tipo;
+    }
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      mostrarMensagem('', '');
+
+      const dados = {
+        nome: nome.value.trim(),
+        email: email.value.trim().toLowerCase(),
+        telefone: telefone.value.trim(),
+        senha: senha.value
+      };
+
+      if (!dados.nome || !dados.email || !dados.senha || !confirmar.value) {
+        mostrarMensagem('Preencha todos os campos obrigatórios.', 'erro');
+        return;
+      }
+
+      if (dados.senha.length < 8) {
+        mostrarMensagem('A senha precisa ter pelo menos 8 caracteres.', 'erro');
+        return;
+      }
+
+      if (dados.senha !== confirmar.value) {
+        mostrarMensagem('As senhas não coincidem.', 'erro');
+        return;
+      }
+
+      if (!termos.checked) {
+        mostrarMensagem('Você precisa aceitar os termos para continuar.', 'erro');
+        return;
+      }
+
+      try {
+        btn.disabled = true;
+        btn.textContent = 'Criando conta...';
+
+        await apiFetch('/api/auth/cadastro', {
+          method: 'POST',
+          body: JSON.stringify(dados)
+        });
+
+        mostrarMensagem('Conta criada com sucesso! Redirecionando para o login...', 'ok');
+        form.reset();
+        barraSenha.style.width = '0%';
+
+        setTimeout(() => {
+          window.location.href = 'Telalogin.html';
+        }, 1200);
+      } catch (erro) {
+        mostrarMensagem(erro.message || 'Erro ao acessar a API.', 'erro');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Criar conta';
+      }
+    });
+  </script>
+</body>
+</html>
