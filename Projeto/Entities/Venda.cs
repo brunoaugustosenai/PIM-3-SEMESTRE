@@ -25,5 +25,17 @@ public class Venda
     [Column("valor_total")]
     public decimal ValorTotal { get; set; }
 
+    [Column("forma_pagamento")]
+public string? FormaPagamento { get; set; }
+
+[Column("cartao_numero")]
+public string? CartaoNumero { get; set; }
+
+[Column("cartao_validade")]
+public string? CartaoValidade { get; set; }
+
+[Column("cartao_cvv")]
+public string? CartaoCvv { get; set; }
+
     public List<ItemVenda> Itens { get; set; } = new();
 }

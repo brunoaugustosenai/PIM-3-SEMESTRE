@@ -278,3 +278,4 @@ C:\Users\josericardo\Desktop\PIM 3° SEMESTRE\Projeto\obj\Debug\net8.0\refint\Pr
 C:\Users\josericardo\Desktop\PIM 3° SEMESTRE\Projeto\obj\Debug\net8.0\Projeto.pdb
 C:\Users\josericardo\Desktop\PIM 3° SEMESTRE\Projeto\obj\Debug\net8.0\Projeto.genruntimeconfig.cache
 C:\Users\josericardo\Desktop\PIM 3° SEMESTRE\Projeto\obj\Debug\net8.0\ref\Projeto.dll
+C:\Users\josericardo\Desktop\PIM 3° SEMESTRE\Projeto\obj\Debug\net8.0\Projeto.sourcelink.json
