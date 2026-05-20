@@ -1,4 +1,23 @@
 namespace Projeto.Models;
 
-public record ItemVendaRequest(int ProdutoId, int Quantidade);
-public record CriarVendaRequest(int ClienteId, List<ItemVendaRequest> Itens);
+public class CriarVendaRequest
+{
+    public int ClienteId { get; set; }
+
+    public string? FormaPagamento { get; set; }
+
+    public string? CartaoNumero { get; set; }
+
+    public string? CartaoValidade { get; set; }
+
+    public string? CartaoCvv { get; set; }
+
+    public List<ItemVendaRequest> Itens { get; set; } = new();
+}
+
+public class ItemVendaRequest
+{
+    public int ProdutoId { get; set; }
+
+    public int Quantidade { get; set; }
+}

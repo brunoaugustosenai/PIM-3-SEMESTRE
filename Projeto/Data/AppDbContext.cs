@@ -25,10 +25,15 @@ public class AppDbContext : DbContext
             .Property(p => p.PrecoVenda)
             .HasPrecision(10, 2);
 
+        // Tabela de vendas tem trigger no banco
+        modelBuilder.Entity<Venda>()
+            .ToTable("tbvenda", tb => tb.HasTrigger("trg_bloquear_cartao_invalido"));
+
         modelBuilder.Entity<Venda>()
             .Property(v => v.ValorTotal)
             .HasPrecision(10, 2);
 
+        // Tabela de itens de venda tem trigger no banco
         modelBuilder.Entity<ItemVenda>()
             .ToTable("tbitemvenda", tb => tb.HasTrigger("trg_verificar_estoque_venda"));
 
